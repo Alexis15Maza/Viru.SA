@@ -1,0 +1,8 @@
+com\virusa\repository\TipoEstadoRepository.class
+com\virusa\repository\TipoTemperaturaRepository.class
+com\virusa\VirusaBackendApplication.class
+com\virusa\entity\Producto.class
+com\virusa\repository\ProductoRepository.class
+com\virusa\controller\ProductoController.class
+com\virusa\entity\TipoTemperaturaProducto.class
+com\virusa\entity\TipoEstadoProducto.class

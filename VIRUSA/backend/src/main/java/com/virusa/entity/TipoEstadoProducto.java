@@ -1,9 +1,13 @@
-package com.virusa.entity; 
+package com.virusa.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;              
+import lombok.NoArgsConstructor;    
 
 @Entity
 @Table(name = "Tipos_Estados_Productos")
+@Data 
+@NoArgsConstructor 
 public class TipoEstadoProducto {
     
     @Id
@@ -13,16 +17,4 @@ public class TipoEstadoProducto {
     @Column(name = "nombre_estado_producto", nullable = false, unique = true, length = 50)
     private String nombreEstadoProducto;
 
-    public Integer getIdEstadoProducto() {
-        return idEstadoProducto;
-    }
-    public void setIdEstadoProducto(Integer idEstadoProducto) {
-        this.idEstadoProducto = idEstadoProducto;
-    }
-    public String getNombreEstadoProducto() {
-        return nombreEstadoProducto;
-    }
-    public void setNombreEstadoProducto(String nombreEstadoProducto) {
-        this.nombreEstadoProducto = nombreEstadoProducto;
-    }
 }
