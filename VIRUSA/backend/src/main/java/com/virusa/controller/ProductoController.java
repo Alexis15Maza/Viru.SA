@@ -7,8 +7,12 @@ import com.virusa.repository.ProductoRepository;
 import com.virusa.repository.TipoEstadoRepository;
 import com.virusa.repository.TipoTemperaturaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +45,7 @@ public class ProductoController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Producto> obtenerProductoPorId(@PathVariable Long id) {
+    public ResponseEntity<Producto> obtenerProductoPorId(@PathVariable long id) {
         return productoRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -80,20 +84,34 @@ public class ProductoController {
 
         /* === TEMPERATURA === */
         Integer tempId = detallesProducto.getTemperatura().getIdTemperaturaProducto();
-        System.out.println("tempId = " + tempId); // ← PRINT 1
-        Optional<TipoTemperaturaProducto> tempOpt = temperaturaRepository.findById(tempId);
-        if (tempOpt.isEmpty()) {
-            return ResponseEntity.<Producto>badRequest().build();
+        if (tempId == null) {
+            return ResponseEntity.badRequest().build();
         }
+
+        System.out.println("tempId = " + tempId);
+
+        Optional<TipoTemperaturaProducto> tempOpt = temperaturaRepository.findById(tempId);
+
+        if (tempOpt.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
         productoExistente.setTemperatura(tempOpt.get());
 
         /* === ESTADO === */
         Integer estId = detallesProducto.getEstado().getIdEstadoProducto();
-        System.out.println("estId = " + estId); // ← PRINT 2
-        Optional<TipoEstadoProducto> estadoOpt = estadoRepository.findById(estId);
-        if (estadoOpt.isEmpty()) {
-            return ResponseEntity.<Producto>badRequest().build();
+        if (estId == null) {
+            return ResponseEntity.badRequest().build();
         }
+
+        System.out.println("estId = " + estId);
+
+        Optional<TipoEstadoProducto> estadoOpt = estadoRepository.findById(estId);
+
+        if (estadoOpt.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
         productoExistente.setEstado(estadoOpt.get());
 
         Producto productoActualizado = productoRepository.save(productoExistente);
@@ -107,12 +125,14 @@ public class ProductoController {
 
     /* 5. DELETE LÓGICO */
     @PutMapping("/estado/{id}/{nuevoEstadoId}")
-    public ResponseEntity<Producto> cambiarEstado(@PathVariable Long id,
-            @PathVariable Integer nuevoEstadoId) {
+    public ResponseEntity<Producto> cambiarEstado(@PathVariable long id,
+            @PathVariable int nuevoEstadoId) {
+
         Optional<TipoEstadoProducto> nuevoEstadoOpt = estadoRepository.findById(nuevoEstadoId);
         if (nuevoEstadoOpt.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
+
         return productoRepository.findById(id)
                 .map(producto -> {
                     producto.setEstado(nuevoEstadoOpt.get());
@@ -120,5 +140,44 @@ public class ProductoController {
                     return ResponseEntity.ok(productoModificado);
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Código Modificado y Limpio:
+    @GetMapping("/pagina")
+    public ResponseEntity<Page<Producto>> listarProductosPaginados(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "idProducto") String sort,
+            @RequestParam(defaultValue = "desc") String direction) {
+
+        if (sort == null || direction == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Sort sortObj = Sort.by(Sort.Direction.fromString(direction), sort);
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+        Page<Producto> productos = productoRepository.findAll(pageable);
+        return ResponseEntity.ok(productos);
+    }
+
+    /* 7. BUSCAR POR NOMBRE + PAGINADO */
+    @GetMapping("/buscar")
+    public ResponseEntity<Page<Producto>> buscarPorNombre(
+            @RequestParam String nombre,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "idProducto") String sort,
+            @RequestParam(defaultValue = "desc") String direction) {
+
+        if (nombre == null || nombre.trim().isEmpty() || sort == null || direction == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Sort sortObj = Sort.by(Sort.Direction.fromString(direction), sort);
+        Pageable pageable = PageRequest.of(page, size, sortObj);
+
+        Page<Producto> productos = productoRepository.findByNombreProductoContainingIgnoreCase(nombre, pageable);
+
+        return ResponseEntity.ok(productos);
     }
 }

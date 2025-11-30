@@ -114,58 +114,69 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Rellena la tabla con productos activos
+    /* ===== PAGINACIÓN ===== */
+    const FILAS_POR_PAGINA = 10;
+    let paginaActual = 1; // empieza en 1 (humano)
+    let totalPaginas = 1;
+
+    /* 3. CARGAR PRODUCTOS (PAGINADO) */
     async function cargarProductos() {
         try {
-            const response = await fetch(API_BASE_URL);
-            if (!response.ok) throw new Error('Error al listar productos.');
+            const response = await fetch(
+                `${API_BASE_URL}/pagina?page=${paginaActual - 1}&size=${FILAS_POR_PAGINA}&sort=idProducto&direction=desc`
+            );
+            if (!response.ok) throw new Error('Error al cargar productos paginados.');
 
-            const productos = await response.json();
+            const pagina = await response.json();
+            console.log('Respuesta del servidor →', pagina);
+            const productos = pagina.content; // solo la página actual
+            totalPaginas = pagina.totalPages;
+
+            // pintar tabla
             tablaBody.innerHTML = '';
-
             productos.forEach(p => {
+                console.log('Productos a pintar →', productos);
                 const estadoClass = p.estado.idEstadoProducto === 1 ? 'bg-success' : 'bg-danger';
                 const estadoTexto = p.estado.nombreEstadoProducto;
 
                 let botonAccion;
-                // Si el producto está ACTIVO (1), ofrecemos Inactivar (2)
                 if (p.estado.idEstadoProducto === 1) {
                     botonAccion = `
-                        <button class="btn btn-sm btn-danger btn-cambiar-estado" 
-                            data-id="${p.idProducto}" data-nuevo-estado="2">
-                            <i class="bi bi-trash-fill"></i> Eliminar (Lógica)
-                        </button>`;
+                    <button class="btn btn-sm btn-danger btn-cambiar-estado" 
+                        data-id="${p.idProducto}" data-nuevo-estado="2">
+                        <i class="bi bi-trash-fill"></i> Eliminar
+                    </button>`;
                 } else {
-                    // Si el producto está INACTIVO (2), ofrecemos Activar (1)
                     botonAccion = `
-                        <button class="btn btn-sm btn-success btn-cambiar-estado" 
-                            data-id="${p.idProducto}" data-nuevo-estado="1">
-                            <i class="bi bi-arrow-clockwise"></i> Restaurar
-                        </button>`;
+                    <button class="btn btn-sm btn-success btn-cambiar-estado" 
+                        data-id="${p.idProducto}" data-nuevo-estado="1">
+                        <i class="bi bi-arrow-clockwise"></i> Restaurar
+                    </button>`;
                 }
 
                 const row = `
-                    <tr>
-                        <td>${p.idProducto}</td>
-                        <td>${p.nombreProducto}</td>
-                        <td>${p.descripcionProducto || ''}</td>
-                        <td><span class="badge ${estadoClass}">${estadoTexto}</span></td>
-                        <td>${p.temperatura.nombreTemperaturaProducto}</td>
-                        <td class="text-center">
-                            <button class="btn btn-sm btn-info text-white me-2 btn-editar" data-id="${p.idProducto}">
-                                <i class="bi bi-pencil-square"></i> Editar
-                            </button>
-                            ${botonAccion}
-                        </td>
-                    </tr>
-                `;
+                <tr>
+                    <td>${p.idProducto}</td>
+                    <td>${p.nombreProducto}</td>
+                    <td>${p.descripcionProducto || ''}</td>
+                    <td><span class="badge ${estadoClass}">${estadoTexto}</span></td>
+                    <td>${p.temperatura.nombreTemperaturaProducto}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-info text-white me-2 btn-editar" data-id="${p.idProducto}">
+                            <i class="bi bi-pencil-square"></i> Editar
+                        </button>
+                        ${botonAccion}
+                    </td>
+                </tr>
+            `;
                 tablaBody.innerHTML += row;
             });
 
             asignarEventosTabla();
+            actualizarPaginacion(); // botones y número
 
         } catch (error) {
-            console.error("Error al cargar productos:", error);
+            console.error("Error al cargar productos paginados:", error);
             tablaBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al cargar datos del servidor.</td></tr>';
         }
     }
@@ -191,18 +202,26 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    /* ========== BUSCADOR EN VIVO ========== */
-    const inputBuscador = document.getElementById('buscador-productos');
+    /* ===== ACTUALIZAR PAGINACIÓN ===== */
+    function actualizarPaginacion() {
+        document.getElementById('num-pagina').textContent = paginaActual;
+        document.getElementById('btn-anterior').disabled = paginaActual === 1;
+        document.getElementById('btn-siguiente').disabled = paginaActual >= totalPaginas;
+    }
 
-    inputBuscador.addEventListener('input', function () {
-        const texto = this.value.toLowerCase();
-        const filas = tablaBody.querySelectorAll('tr');
-
-        filas.forEach(fila => {
-            const nombre = fila.cells[1].textContent.toLowerCase(); // columna "Nombre"
-            fila.style.display = nombre.includes(texto) ? '' : 'none';
-        });
-    });
+/* ===== BÚSQUEDA EN VIVO ===== */
+const inputBuscador = document.getElementById('buscador-productos');
+inputBuscador.addEventListener('input', function () {
+    textoBusqueda = this.value.trim();
+    console.log('Texto ingresado →', textoBusqueda);
+    console.log('URL que se armará →',
+        textoBusqueda
+            ? `${API_BASE_URL}/buscar?nombre=${encodeURIComponent(textoBusqueda)}&page=${paginaActual - 1}&size=${FILAS_POR_PAGINA}&sort=idProducto&direction=desc`
+            : `${API_BASE_URL}/pagina?page=${paginaActual - 1}&size=${FILAS_POR_PAGINA}&sort=idProducto&direction=desc`
+    );
+    paginaActual = 1; // reinicia a la primera página
+    cargarProductos();
+});
 
     // --- 5. FUNCIONES DE ACCIÓN (POST, PUT) ---
 
@@ -281,6 +300,21 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error(error);
             alert(`Error al guardar el producto: ${error.message}`);
+        }
+    });
+
+    /* ===== EVENTOS DE PAGINACIÓN ===== */
+    document.getElementById('btn-anterior').addEventListener('click', () => {
+        if (paginaActual > 1) {
+            paginaActual--;
+            cargarProductos();
+        }
+    });
+
+    document.getElementById('btn-siguiente').addEventListener('click', () => {
+        if (paginaActual < totalPaginas) {
+            paginaActual++;
+            cargarProductos();
         }
     });
 
