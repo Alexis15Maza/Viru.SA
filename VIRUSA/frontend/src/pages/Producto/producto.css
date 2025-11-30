@@ -1,0 +1,25 @@
+/*
+ * Archivo: styles.css
+ * Contiene el CSS mínimo necesario para el layout, el resto es Bootstrap.
+ */
+
+/* Estilo para el Sidebar */
+.sidebar {
+    /* Ancho fijo para el sidebar */
+    width: 250px; 
+    /* Asegura que ocupe toda la altura de la vista */
+    min-height: 100vh;
+    /* Fijo en la pantalla */
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    padding-top: 20px;
+}
+
+/* Ajuste para el Contenido Principal */
+.main-content {
+    /* Mover el contenido a la derecha del sidebar */
+    margin-left: 250px; 
+    padding: 20px;
+}
