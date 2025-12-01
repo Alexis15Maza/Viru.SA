@@ -13,7 +13,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import com.virusa.service.ProductoService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,13 +35,14 @@ public class ProductoController {
     @Autowired
     private TipoTemperaturaRepository temperaturaRepository;
 
-    /* 1. CATÁLOGOS */
+    @Autowired
+    private ProductoService productoService;
+
     @GetMapping("/temperaturas")
     public List<TipoTemperaturaProducto> obtenerTemperaturas() {
         return temperaturaRepository.findAll();
     }
 
-    /* 2. READ */
     @GetMapping
     public List<Producto> listarProductosActivos() {
         final Integer ESTADO_ACTIVO = 1;
@@ -51,7 +56,6 @@ public class ProductoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /* 3. CREATE */
     @PostMapping
     public ResponseEntity<Producto> crearProducto(@RequestBody Producto productoNuevo) {
         final Integer ESTADO_ACTIVO_ID = 1;
@@ -65,11 +69,10 @@ public class ProductoController {
         return ResponseEntity.ok(productoGuardado);
     }
 
-    /* 4. UPDATE */
     @PutMapping("/{id}")
     public ResponseEntity<Producto> actualizarProducto(@PathVariable Long id,
             @RequestBody Producto detallesProducto) {
-        if (id == null) { // ← defensa rápida
+        if (id == null) {
             return ResponseEntity.badRequest().build();
         }
 
@@ -82,7 +85,6 @@ public class ProductoController {
         productoExistente.setNombreProducto(detallesProducto.getNombreProducto());
         productoExistente.setDescripcionProducto(detallesProducto.getDescripcionProducto());
 
-        /* === TEMPERATURA === */
         Integer tempId = detallesProducto.getTemperatura().getIdTemperaturaProducto();
         if (tempId == null) {
             return ResponseEntity.badRequest().build();
@@ -98,7 +100,6 @@ public class ProductoController {
 
         productoExistente.setTemperatura(tempOpt.get());
 
-        /* === ESTADO === */
         Integer estId = detallesProducto.getEstado().getIdEstadoProducto();
         if (estId == null) {
             return ResponseEntity.badRequest().build();
@@ -123,7 +124,6 @@ public class ProductoController {
         return estadoRepository.findAll();
     }
 
-    /* 5. DELETE LÓGICO */
     @PutMapping("/estado/{id}/{nuevoEstadoId}")
     public ResponseEntity<Producto> cambiarEstado(@PathVariable long id,
             @PathVariable int nuevoEstadoId) {
@@ -142,7 +142,6 @@ public class ProductoController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Código Modificado y Limpio:
     @GetMapping("/pagina")
     public ResponseEntity<Page<Producto>> listarProductosPaginados(
             @RequestParam(defaultValue = "0") int page,
@@ -160,7 +159,6 @@ public class ProductoController {
         return ResponseEntity.ok(productos);
     }
 
-    /* 7. BUSCAR POR NOMBRE + PAGINADO */
     @GetMapping("/buscar")
     public ResponseEntity<Page<Producto>> buscarPorNombre(
             @RequestParam String nombre,
@@ -179,5 +177,27 @@ public class ProductoController {
         Page<Producto> productos = productoRepository.findByNombreProductoContainingIgnoreCase(nombre, pageable);
 
         return ResponseEntity.ok(productos);
+    }
+
+    @GetMapping("/exportar")
+    public ResponseEntity<byte[]> exportarAExcel() {
+        try {
+
+            byte[] excelContent = productoService.exportarProductosAExcel();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+
+            String fileName = "productos_" + System.currentTimeMillis() + ".xlsx";
+            headers.setContentDispositionFormData("attachment", fileName);
+
+            return ResponseEntity
+                    .ok()
+                    .headers(headers)
+                    .body(excelContent);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }

@@ -1,6 +1,8 @@
 com\virusa\repository\TipoEstadoRepository.class
 com\virusa\repository\TipoTemperaturaRepository.class
+com\virusa\util\ProductoExcelExporter.class
 com\virusa\VirusaBackendApplication.class
+com\virusa\service\ProductoService.class
 com\virusa\entity\Producto.class
 com\virusa\repository\ProductoRepository.class
 com\virusa\controller\ProductoController.class
