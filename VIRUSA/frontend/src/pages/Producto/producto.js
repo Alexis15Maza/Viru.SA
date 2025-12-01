@@ -12,10 +12,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnCancelar = document.getElementById('btn-cancelar');
     const tablaBody = document.querySelector('#tabla-productos tbody');
     const selectTemperatura = document.getElementById('temperatura');
-    const inputDescripcion = document.getElementById('descripcion'); // Asumimos ID 'descripcion'
-    const selectEstado = document.getElementById('estado'); // Asumimos ID 'estado'
+    const inputDescripcion = document.getElementById('descripcion');
+    const selectEstado = document.getElementById('estado');
+
+    // Referencia al Buscador (ya existe en tu HTML)
+    const inputBuscador = document.getElementById('buscador-productos');
 
     let currentProductId = null; // ID del producto en edición (null si es nuevo)
+
+    /* ===== PAGINACIÓN Y FILTRADO ===== */
+    const FILAS_POR_PAGINA = 10;
+    let paginaActual = 1; // empieza en 1 (humano)
+    let totalPaginas = 1;
+    let textoBusqueda = ""; // **VARIABLE GLOBAL AÑADIDA/MOVIDA para manejar el filtro de nombre**
 
     // --- 2. FUNCIONES DE UTILIDAD ---
 
@@ -114,17 +123,31 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    /* ===== PAGINACIÓN ===== */
-    const FILAS_POR_PAGINA = 10;
-    let paginaActual = 1; // empieza en 1 (humano)
-    let totalPaginas = 1;
+    /* ===== FUNCIÓN DE CONSTRUCCIÓN DE URL (NUEVA) ===== */
+    function construirUrlCarga() {
+        // Parámetros base de paginación y ordenamiento
+        const params = `page=${paginaActual - 1}&size=${FILAS_POR_PAGINA}&sort=idProducto&direction=desc`;
+        let url = API_BASE_URL;
 
-    /* 3. CARGAR PRODUCTOS (PAGINADO) */
+        if (textoBusqueda && textoBusqueda.length > 0) {
+            // Si hay texto de búsqueda, usamos el endpoint /buscar (filtrado por nombre)
+            url += `/buscar?nombre=${encodeURIComponent(textoBusqueda)}&${params}`;
+        } else {
+            // Si NO hay texto de búsqueda, usamos el endpoint paginado general /pagina
+            url += `/pagina?${params}`;
+        }
+        console.log('URL de Carga/Búsqueda →', url);
+        return url;
+    }
+
+
+    /* 3. CARGAR PRODUCTOS (PAGINADO Y FILTRADO) */
     async function cargarProductos() {
         try {
-            const response = await fetch(
-                `${API_BASE_URL}/pagina?page=${paginaActual - 1}&size=${FILAS_POR_PAGINA}&sort=idProducto&direction=desc`
-            );
+            // Utilizamos la nueva función para obtener la URL correcta
+            const urlFinal = construirUrlCarga(); 
+            const response = await fetch(urlFinal);
+            
             if (!response.ok) throw new Error('Error al cargar productos paginados.');
 
             const pagina = await response.json();
@@ -135,7 +158,6 @@ document.addEventListener('DOMContentLoaded', function () {
             // pintar tabla
             tablaBody.innerHTML = '';
             productos.forEach(p => {
-                console.log('Productos a pintar →', productos);
                 const estadoClass = p.estado.idEstadoProducto === 1 ? 'bg-success' : 'bg-danger';
                 const estadoTexto = p.estado.nombreEstadoProducto;
 
@@ -209,19 +231,18 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('btn-siguiente').disabled = paginaActual >= totalPaginas;
     }
 
-/* ===== BÚSQUEDA EN VIVO ===== */
-const inputBuscador = document.getElementById('buscador-productos');
-inputBuscador.addEventListener('input', function () {
-    textoBusqueda = this.value.trim();
-    console.log('Texto ingresado →', textoBusqueda);
-    console.log('URL que se armará →',
-        textoBusqueda
-            ? `${API_BASE_URL}/buscar?nombre=${encodeURIComponent(textoBusqueda)}&page=${paginaActual - 1}&size=${FILAS_POR_PAGINA}&sort=idProducto&direction=desc`
-            : `${API_BASE_URL}/pagina?page=${paginaActual - 1}&size=${FILAS_POR_PAGINA}&sort=idProducto&direction=desc`
-    );
-    paginaActual = 1; // reinicia a la primera página
-    cargarProductos();
-});
+    /* ===== BÚSQUEDA EN VIVO (ACTUALIZADO) ===== */
+    // El inputBuscador ya está referenciado arriba
+    inputBuscador.addEventListener('input', function () {
+        // 1. Actualiza la variable global con el valor limpio
+        textoBusqueda = this.value.trim();
+        
+        // 2. Reinicia a la primera página para que la búsqueda inicie desde el principio
+        paginaActual = 1; 
+        
+        // 3. Llama a cargarProductos (que usará la nueva URL construida)
+        cargarProductos();
+    });
 
     // --- 5. FUNCIONES DE ACCIÓN (POST, PUT) ---
 
