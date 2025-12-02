@@ -1,1 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Proveedores</title>
+    <link rel="stylesheet" href="gestion_proveedores.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Gestión de Proveedores</h1>
+        <form id="formularioProveedor">
+            <label for="nombre">Nombre del Proveedor:</label>
+            <input type="text" id="nombre" required><br>
+
+            <label for="empresa">Empresa:</label>
+            <input type="text" id="empresa" required><br>
+
+            <label for="direccion">Dirección:</label>
+            <input type="text" id="direccion" required><br>
+
+            <label for="estado">Estado:</label>
+            <select id="estado" required>
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+            </select><br>
+
+            <button type="submit">Registrar Proveedor</button>
+        </form>
+
+        <table id="tablaProveedores">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Empresa</th>
+                    <th>Dirección</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Aquí se generarán las filas de los proveedores -->
+            </tbody>
+        </table>
+
+        <button id="exportarExcel">Exportar a Excel</button>
+    </div>
+
+    <script src="gestion_proveedores.js"></script>
+</body>
+</html>
 
