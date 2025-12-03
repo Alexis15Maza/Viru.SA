@@ -1,26 +1,30 @@
-@Service
-public class ProveedorService {
+package com.virusa.entity;
 
-    @Autowired
-    private ProveedorRepository proveedorRepository;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
-    // Método para registrar proveedor
-    public Proveedor registrarProveedor(Proveedor proveedor) {
-        return proveedorRepository.save(proveedor);
-    }
+@Entity
+@Table(name = "proveedor")
+@Getter
+@Setter
+public class Proveedor {
 
-    // Método para obtener todos los proveedores
-    public List<Proveedor> obtenerProveedores() {
-        return proveedorRepository.findAll();
-    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    // Método para exportar a Excel
-    public ByteArrayResource exportarExcel() {
-        List<Proveedor> proveedores = proveedorRepository.findAll();
-        // Aquí va la lógica para generar el archivo Excel con Apache POI
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        // Implementar la generación de Excel con POI aquí
-        return new ByteArrayResource(out.toByteArray());
-    }
+    @Column(name = "nombre_proveedor", nullable = false)
+    private String nombreProveedor;
+
+    @Column(name = "empresa", nullable = false)
+    private String empresa;
+
+    @Column(name = "direccion_empresa", nullable = false)
+    private String direccionEmpresa;
+
+    @Column(name = "estado_empresa", nullable = false)
+    private String estadoEmpresa; // "ACTIVO" / "INACTIVO"
 }
+
 
