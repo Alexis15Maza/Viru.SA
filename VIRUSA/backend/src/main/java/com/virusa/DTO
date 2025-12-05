@@ -1,1 +1,45 @@
+package com.virusa.dto;
 
+import lombok.Data;
+import java.time.LocalDate;
+
+@Data
+public class StockRegistroDTO {
+    private Long idStockRegistro;
+    private Long idProveedor;
+    private String nombreProveedor;
+    private Long idProducto;
+    private String nombreProducto;
+    private Integer cantidad;
+    private String lote;
+    private LocalDate fechaIngreso;
+    private LocalDate fechaCaducidad;
+    private Integer idTemperaturaProducto;
+    private String temperaturaNombre;
+    private String comentarios;
+    private String estado;
+    private Integer cantidadExportada;
+    private Integer cantidadDisponible;
+    private String fechaRegistro;
+}
+
+// DTO para crear/actualizar stock
+@Data
+class StockRegistroCreateDTO {
+    private Long idProveedor;
+    private Long idProducto;
+    private Integer cantidad;
+    private String lote;
+    private LocalDate fechaIngreso;
+    private LocalDate fechaCaducidad;
+    private Integer idTemperaturaProducto;
+    private String comentarios;
+}
+
+// DTO para exportar cantidad
+@Data
+class ExportarStockDTO {
+    private Long idStockRegistro;
+    private Integer cantidadExportar;
+    private String motivo;
+}
